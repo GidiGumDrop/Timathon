@@ -6,17 +6,21 @@ app = Flask(__name__)
 app.config['DEBUG'] = True
 auto = Autodoc(app)
 
+
 @app.errorhandler(404)
 def http_not_found(e):
     return jsonify({"status": 404})
+
 
 @app.route('/api/docs/', methods=['GET'])
 def docs():
     return auto.html()
 
+
 @app.route('/api/', methods=['GET'])
 def root():
     return jsonify({"status": 200})
+
 
 @app.route('/api/insert_new_user/', methods=['POST'])
 @auto.doc()
@@ -45,21 +49,43 @@ def insert_new_event():
     data = request.get_json()
     if not data:
         data = {}
-    req_keys = {'user_id', 'title', 'desc', 'datetime', 'tags', 'lat', 'lon', 'agegroup', 'imgs'}
+    req_keys = {'user_id', 'title', 'desc', 'datetime', 'tags', 'lat', 'lon', 'agegroup', 'max_ppl', 'imgs'}
     
     if data.keys() >= req_keys:
         #try:
         conn = db_queries.get_conn()
-        result = db_queries.insert_event(conn, (int(data['user_id']), data['title'], data['desc'], data['datetime'], data['tags'], data['agegroup'], float(data['lat']), float(data['lon']), data['imgs']))
+        result = db_queries.insert_event(conn, (int(data['user_id']), data['title'], data['desc'], data['datetime'], data['tags'], data['agegroup'], int(data['max_ppl']), float(data['lat']), float(data['lon']), data['imgs']))
         if result:
-            return jsonify({"message": result[1]})
-            # else:
-                # return jsonify({"message": "no user with this id found"})
+            return jsonify({"message": "success"})
+        else:
+            return jsonify({"message": "no user with this id found"})
         # except:
             # return jsonify({"message": "error"})
     # else:
         # return jsonify({"message": "invalid data"})
-        
+
+
+@app.route('/api/insert_user_attendance/', methods=['POST'])
+@auto.doc()
+def insert_user_attendance():
+    
+    data = request.get_json()
+    if not data:
+        data = {}
+    req_keys = {'user_id', 'event_id'}
+    
+    if data.keys() >= req_keys:
+        try:
+            conn = db_queries.get_conn()
+            result = db_queries.add_attendance(conn, (data['user_id'], data['event_id']))
+            if result:
+                return jsonify({"message":"success"})
+            return jsonify({"message":"user already attending this event or max attendance reached"})
+        except:
+            return jsonify({"message":"error"})
+    else:
+        return jsonify({"message":"invalid data"})
+
 
 @app.route('/api/get_user_info/', methods=['GET'])
 @auto.doc()
@@ -68,37 +94,37 @@ def get_user_info():
     user_id = request.args.get('user_id')
   
     if user_id:
-        try:
-            conn = db_queries.get_conn()
-            data = db_queries.get_user_data(conn, user_id)
-            if not data:
-                return jsonify({"message": "no user with this id found"})
-            
-            return jsonify({"status":200, "data":{"user_id": data[0][0], "fname": data[0][1], "sname": data[0][2], "dob": data[0][3], "email": data[0][4], "password": data[0][5], "user_pfp": data[0][6]}})
-        except:
-            return jsonify({"message":"error"})
+        # try:
+        conn = db_queries.get_conn()
+        data = db_queries.get_user_data(conn, user_id)
+        if not data:
+            return jsonify({"message": "no user with this id found"})
+
+        return jsonify({"status":200, "data":{"user_id": data[0][0], "fname": data[0][1], "sname": data[0][2], "dob": data[0][3], "email": data[0][4], "password": data[0][5], "user_pfp": data[0][6]}})
+        # except:
+            # return jsonify({"message":"error"})
     else:
         return jsonify({"message": "invalid data"})
 
 
-@app.route('/api/get_user_events/', methods=['GET'])
+@app.route('/api/get_user_created_events/', methods=['GET'])
 @auto.doc()
-def get_user_events():
+def get_user_created_events():
     
     user_id = request.args.get('user_id')
     
     if user_id:
         try:
             conn = db_queries.get_conn()
-            data = db_queries.get_user_events(conn, user_id)
+            data = db_queries.get_user_created_events(conn, user_id)
             
             if not data:
                 return jsonify({"message": "no events for this user or no user with this id"})
                 
             return_str = []
             for i in data:
-                return_str.append({"event_id": i[0], "event_title": i[2], "event_desc": i[3], "event_datetime": i[4], "event_tags": i[5], "event_agegroup": i[6], "event_lat": i[7], "event_lon": i[8], "event_imgs": i[9]})
-            return_str.append({"status": 200, "user_id": data[0][1]})
+                return_str.append({"event_id": i[0], "event_title": i[2], "event_desc": i[3], "event_datetime": i[4], "event_tags": i[5], "event_agegroup": i[6], "event_max_ppl":i[7], "event_lat": i[8], "event_lon": i[9], "event_imgs": i[10]})
+            return_str.append({"status": 200, "user_id": user_id})
             
             return jsonify(return_str)
         except:
@@ -107,9 +133,51 @@ def get_user_events():
         return jsonify({"message": "invalid data"})
 
 
+@app.route('/api/get_user_attending/', methods=['GET'])
+@auto.doc()
+def get_user_attending():
+    
+    user_id = request.args.get('user_id')
+    
+    if user_id:
+        try:
+            conn = db_queries.get_conn()
+            data = db_queries.get_user_events_attending(conn, user_id)
+            
+            if not data:
+                return jsonify({"message":"this user is attending no events or this user_id is invalid"})
+            
+            return_str = []
+            for i in data:
+                return_str.append({"event_id": i[0], "event_title": i[2], "event_desc": i[3], "event_datetime": i[4], "event_tags": i[5], "event_agegroup": i[6], "event_max_ppl":i[7], "event_lat": i[8], "event_lon": i[9], "event_imgs": i[10]})
+            return_str.append({"status":200, "user_id":user_id})
+            
+            return jsonify(return_str)
+        except:
+            return jsonify({"message": "error"})
+    else:
+        return jsonify({"message":"invalid data"})
+
+
+@app.route('/api/check_if_attending/', methods=['GET'])
+@auto.doc()
+def check_if_attending():
+    
+    user_id = request.args.get('user_id')
+    event_id = request.args.get('event_id')
+    
+    if user_id and event_id:
+        
+        conn = db_queries.get_conn()
+        data = db_queries.check_if_attending(conn, (user_id, event_id))
+        return jsonify({"attending":data})
+        
+        
+
 @app.route('/api/update_user_info/', methods=['POST'])
 @auto.doc()
 def update_user_info():
+
     data = request.get_json()
     if not data:
         data = {}
@@ -144,12 +212,31 @@ def update_event_info():
             return jsonify({"message":"error"})
     else:
         return jsonify({"message":"invalid data"})
+        
 
+@app.route('/api/search_events/', methods=['POST'])
+@auto.doc()
+def search_events():
+    
+    data = request.get_json()
+    if not data:
+        data = {}
+    search_types_tup = ('agegroup', 'date', 'keywords', 'location', 'tags', 'time')
+    
+    for i in search_types_tup:
+        if data[i] == None:
+            data[i] = 'null'
+    
+    data = dict( sorted(data.items(), key=lambda x: x[0].lower()))
+    
+    #if any(k.lower() in search_types_tup for k in data.keys()):
+        
         
 @app.route('/api/test/', methods=['GET', 'POST'])
 def test():
-    content = request.get_json(silent=False)
-    return jsonify({"uuid": content})
+    
+    x = request.args.get('x')
+    
     
 
 app.run()

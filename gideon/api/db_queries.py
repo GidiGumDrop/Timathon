@@ -13,25 +13,26 @@ def insert_user(conn, data):
 
 def insert_event(conn, data):
     
-    sql = "INSERT INTO events(user_id, event_title, event_desc, event_datetime, event_tags, event_agegroup, event_lat, event_lon, event_imgs) VALUES (?,?,?,?,?,?,?,?,?) returning *;"
+    sql = "INSERT INTO events(user_id, event_title, event_desc, event_datetime, event_tags, event_agegroup, event_max_ppl, event_lat, event_lon, event_imgs) VALUES (?,?,?,?,?,?,?,?,?,?);"
     user_data = get_user_data(conn, str(data[0]))
-    #attending_data = check_if_attending(conn, (data[0], ))
 
     if user_data:
         cur = conn.cursor()
         cur.execute(sql, data)
         conn.commit()
         result = cur.fetchall()
-        return (True, result) 
+        event_id = cur.lastrowid
+        add_attendance(conn, (data[0], event_id))
+        return True
     else:
         return False
 
 
 def check_if_attending(conn, data):
     
-    sql = f"SELECT EXISTS(SELECT * FROM attending WHERE user_id={data[0]} AND event_id={data[1]}"
+    sql = f"SELECT EXISTS(SELECT * FROM attending WHERE user_id={data[0]} AND event_id={data[1]});"
     
-    curr = conn.cursor()
+    cur = conn.cursor()
     cur.execute(sql)
     result = cur.fetchall()
     if result[0][0] == 1:
@@ -39,11 +40,25 @@ def check_if_attending(conn, data):
     return False
     
 
+def count_of_attending(conn, data):
+    
+    sql = f"SELECT COUNT(*) FROM attending WHERE event_id = {data};"
+    
+    cur = conn.cursor()
+    cur.execute(sql)
+    return cur.fetchall()
+    
+
 def add_attendance(conn, data):
     
     sql_insert = "INSERT INTO attending(user_id, event_id) VALUES(?,?);"
+    sql_check_max_ppl = f"SELECT event_max_ppl FROM events WHERE id = {data[1]};"
     
-    if result[0][0] == 0 and not check_if_attending:
+    cur = conn.cursor()
+    cur.execute(sql_check_max_ppl)
+    max_ppl = cur.fetchall()[0][0]
+    
+    if not check_if_attending(conn, (data[0], data[1])) and not count_of_attending(conn, data[1])[0][0] >= max_ppl:
         cur.execute(sql_insert, data)
         conn.commit()
         return True
@@ -59,14 +74,22 @@ def get_user_data(conn, data):
     return cur.fetchall()
     
 
-def get_user_events(conn, data):
+def get_user_created_events(conn, data):
     
     sql = "SELECT * FROM events WHERE user_id=" + data + ";"
     
     cur = conn.cursor()
     cur.execute(sql)
     return cur.fetchall()
+
+
+def get_user_events_attending(conn, data):
     
+    sql = f"SELECT * FROM events INNER JOIN attending ON attending.event_id = events.id WHERE events.user_id = {data};"
+    
+    cur = conn.cursor()
+    cur.execute(sql)
+    return cur.fetchall()
     
 def update_user_data(conn, data):
     
@@ -85,8 +108,28 @@ def update_event_data(conn, data):
     cur.execute(sql)
     conn.commit()
     return cur.fetchall()
+    
 
-
+def search_by_datetime(conn, data):
+    
+    base_sql = f"SELECT * FROM events WHERE event_datetime > datetime('now') "
+    agegroup_filter = "event_agegroup = %s"
+    date_filter = "date(event_datetime) = %s"
+    keywords_filter = ""
+    location_filter = "event_lat BETWEEN %s-0.075 AND %s+0.075 AND event_lon BETWEEN %s-0.075 AND %s+0.075"
+    tags_filter = "event_tags LIKE '% %s %'"
+    time_filter = "time(event_datetime) = %s"
+    
+    filter_list = ["event_agegroup = %s", "date(event_datetime) = %s", "",
+        "event_lat BETWEEN %s-0.075 AND %s+0.075 AND event_lon BETWEEN %s-0.075 AND %s+0.075",
+        "event_tags LIKE '% %s %'",
+        "time(event_datetime) = %s"]
+    
+    # for i in data.keys():
+        # try:
+            
+        
+    
 def get_conn():
 
     DIR_PATH = os.path.dirname(os.path.realpath(__file__+'\..'))
