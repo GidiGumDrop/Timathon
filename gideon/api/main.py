@@ -52,17 +52,17 @@ def insert_new_event():
     req_keys = {'user_id', 'title', 'desc', 'datetime', 'tags', 'lat', 'lon', 'agegroup', 'max_ppl', 'imgs'}
     
     if data.keys() >= req_keys:
-        #try:
-        conn = db_queries.get_conn()
-        result = db_queries.insert_event(conn, (int(data['user_id']), data['title'], data['desc'], data['datetime'], data['tags'], data['agegroup'], int(data['max_ppl']), float(data['lat']), float(data['lon']), data['imgs']))
-        if result:
-            return jsonify({"message": "success"})
-        else:
-            return jsonify({"message": "no user with this id found"})
-        # except:
-            # return jsonify({"message": "error"})
-    # else:
-        # return jsonify({"message": "invalid data"})
+        try:
+            conn = db_queries.get_conn()
+            result = db_queries.insert_event(conn, (int(data['user_id']), data['title'], data['desc'], data['datetime'], data['tags'], data['agegroup'], int(data['max_ppl']), float(data['lat']), float(data['lon']), data['imgs']))
+            if result:
+                return jsonify({"message": "success"})
+            else:
+                return jsonify({"message": "no user with this id found"})
+        except:
+            return jsonify({"message": "error"})
+    else:
+        return jsonify({"message": "invalid data"})
 
 
 @app.route('/api/insert_user_attendance/', methods=['POST'])
@@ -94,15 +94,15 @@ def get_user_info():
     user_id = request.args.get('user_id')
   
     if user_id:
-        # try:
-        conn = db_queries.get_conn()
-        data = db_queries.get_user_data(conn, user_id)
-        if not data:
-            return jsonify({"message": "no user with this id found"})
+        try:
+            conn = db_queries.get_conn()
+            data = db_queries.get_user_data(conn, user_id)
+            if not data:
+                return jsonify({"message": "no user with this id found"})
 
-        return jsonify({"status":200, "data":{"user_id": data[0][0], "fname": data[0][1], "sname": data[0][2], "dob": data[0][3], "email": data[0][4], "password": data[0][5], "user_pfp": data[0][6]}})
-        # except:
-            # return jsonify({"message":"error"})
+            return jsonify({"status":200, "data":{"user_id": data[0][0], "fname": data[0][1], "sname": data[0][2], "dob": data[0][3], "email": data[0][4], "password": data[0][5], "user_pfp": data[0][6]}})
+        except:
+            return jsonify({"message":"error"})
     else:
         return jsonify({"message": "invalid data"})
 
