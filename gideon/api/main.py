@@ -212,7 +212,60 @@ def update_event_info():
             return jsonify({"message":"error"})
     else:
         return jsonify({"message":"invalid data"})
+
+
+@app.route('/api/delete_user/', methods=['GET'])
+@auto.doc()
+def delete_user():
+    
+    user_id = request.args.get('user_id')
+    
+    if user_id:
+        try:
+            conn = db_queries.get_conn()
+            db_queries.delete_user(conn, user_id)
+            return jsonify({"message":"success"})
+        except:
+            return jsonify({"message":"error"})
+    else:
+        return jsonify({"message":"ivalid data"})
+
+
+@app.route('/api/delete_event/', methods=['GET'])
+@auto.doc()
+def delete_event():
+    
+    user_id = request.args.get('user_id')
+    event_id = request.args.get('event_id')
+    
+    if user_id and event_id:
+        try:
+            conn = db_queries.get_conn()
+            db_queries.delete_event(conn, (user_id, event_id))
+            return jsonify({"message":"success"})
+        except:
+            return jsonify({"message":"error"})
+    else:
+        return jsonify({"message":"invalid data"})
         
+
+@app.route('/api/delete_attendance/', methods=['GET'])
+@auto.doc()
+def delete_attendance():
+    
+    user_id = request.args.get('user_id')
+    event_id = request.args.get('event_id')
+    
+    if user_id and event_id:
+        try:
+            conn = db_queries.get_conn()
+            db_queries.delete_attendance(conn, (user_id, event_id))
+            return jsonify({"message":"success"})
+        except:
+            return jsonify({"message":"error"})
+    else:
+        return jsonify({"message":"invalid data"})
+
 
 @app.route('/api/search_events/', methods=['POST'])
 @auto.doc()

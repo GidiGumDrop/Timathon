@@ -109,6 +109,37 @@ def update_event_data(conn, data):
     conn.commit()
     return cur.fetchall()
     
+    
+def delete_user(conn, data):
+    
+    sql_user = f"DELETE FROM users WHERE id = {data}"
+    sql_attending = f"DELETE FROM attending WHERE user_id = {data};"
+    
+    cur = conn.cursor()
+    cur.execute(sql_attending)
+    cur.execute(sql_user)
+    conn.commit()
+
+
+def delete_event(conn, data):
+    
+    sql_event = f"DELETE FROM events WHERE user_id = {data[0]} AND id = {data[1]};"
+    sql_attending = f"DELETE FROM attending WHERE event_id = {data[1]};"
+    
+    cur = conn.cursor()
+    cur.execute(sql_attending)
+    cur.execute(sql_event)
+    conn.commit()
+    
+    
+def delete_attendance(conn, data):
+    
+    sql = f"DELETE FROM attending WHERE user_id = {data[0]} AND event_id = {data[1]};"
+    
+    cur = conn.cursor()
+    cur.execute(sql)
+    conn.commit()
+    
 
 def search_for_events(conn, data):
     
