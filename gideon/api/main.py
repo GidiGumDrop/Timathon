@@ -206,7 +206,7 @@ def update_event_info():
     if data.keys() >= req_keys:
         try:
             conn = db_queries.get_conn()
-            x = db_queries.update_event_data(conn, data)
+            db_queries.update_event_data(conn, data)
             return jsonify({"message":"success"})
         except:
             return jsonify({"message":"error"})
@@ -221,16 +221,20 @@ def search_events():
     data = request.get_json()
     if not data:
         data = {}
-    search_types_tup = ('agegroup', 'date', 'keywords', 'location', 'tags', 'time')
     
-    for i in search_types_tup:
-        if data[i] == None:
-            data[i] = 'null'
+    data = dict(sorted(data.items(), key=lambda x: x[0].lower()))
+    if data == {}:
+        return jsonify({"message":"invalid data"})
     
-    data = dict( sorted(data.items(), key=lambda x: x[0].lower()))
-    
-    #if any(k.lower() in search_types_tup for k in data.keys()):
-        
+    conn = db_queries.get_conn()
+    result = db_queries.search_for_events(conn, data)
+    return jsonify({"data":result})
+    return_str = []
+    for i in data:
+        return_str.append({"event_id": i[0], "user_id": i[1], "event_title": i[2], "event_desc": i[3], "event_datetime": i[4], "event_tags": i[5], "event_agegroup": i[6], "event_max_ppl":i[7], "event_lat": i[8], "event_lon": i[9], "event_imgs": i[10]})
+    return_str.append({"status":200})
+    return return_str
+
         
 @app.route('/api/test/', methods=['GET', 'POST'])
 def test():
@@ -238,5 +242,4 @@ def test():
     x = request.args.get('x')
     
     
-
 app.run()

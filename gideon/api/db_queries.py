@@ -110,24 +110,35 @@ def update_event_data(conn, data):
     return cur.fetchall()
     
 
-def search_by_datetime(conn, data):
+def search_for_events(conn, data):
     
-    base_sql = f"SELECT * FROM events WHERE event_datetime > datetime('now') "
-    agegroup_filter = "event_agegroup = %s"
-    date_filter = "date(event_datetime) = %s"
-    keywords_filter = ""
-    location_filter = "event_lat BETWEEN %s-0.075 AND %s+0.075 AND event_lon BETWEEN %s-0.075 AND %s+0.075"
-    tags_filter = "event_tags LIKE '% %s %'"
-    time_filter = "time(event_datetime) = %s"
-    
-    filter_list = ["event_agegroup = %s", "date(event_datetime) = %s", "",
-        "event_lat BETWEEN %s-0.075 AND %s+0.075 AND event_lon BETWEEN %s-0.075 AND %s+0.075",
-        "event_tags LIKE '% %s %'",
-        "time(event_datetime) = %s"]
-    
-    # for i in data.keys():
-        # try:
-            
+    search_types_tup = ('agegroup', 'date', 'keywords', 'location', 'tags', 'time')
+    base_sql = f"SELECT * FROM events WHERE event_datetime > datetime('now')"
+    filter_list = ["event_agegroup = '{}'", "date(event_datetime) = '{}'", "event_title LIKE '%{}%",
+        "event_lat BETWEEN {0}-0.075 AND {0}+0.075 AND event_lon BETWEEN {1}-0.075 AND {1}+0.075",
+        "event_tags LIKE '%{}%'", "time(event_datetime) = '{}'"]
+
+    filter_str = ""
+
+    if 'agegroup' in data.keys():
+        filter_str += " AND " + (filter_list[0].format(data['agegroup']))
+    if 'date' in data.keys():
+        filter_str += " AND " + (filter_list[1].format(data['date']))
+    if 'keywords' in data.keys():
+        filter_str += " AND " + (filter_list[2].format(data['keywords']))
+    if 'location' in data.keys():
+        filter_str += " AND " + (filter_list[3].format(data['location'][0], data['location'][1]))
+    if 'tags' in data.keys():
+        filter_str += " AND " + (filter_list[4].format(data['tags']))
+    if 'time' in data.keys():
+        filter_str += " AND " + (filter_list[5].format(data['time']))
+
+    if not filter_str == "":
+        base_sql = base_sql + filter_str
+
+    cur = conn.cursor()
+    cur.execute(base_sql)
+    return cur.fetchall()
         
     
 def get_conn():
