@@ -114,7 +114,7 @@ def search_for_events(conn, data):
     
     search_types_tup = ('agegroup', 'date', 'keywords', 'location', 'tags', 'time')
     base_sql = f"SELECT * FROM events WHERE event_datetime > datetime('now')"
-    filter_list = ["event_agegroup = '{}'", "date(event_datetime) = '{}'", "event_title LIKE '%{}%",
+    filter_list = ["event_agegroup = '{}'", "date(event_datetime) = '{}'", "event_title LIKE '%{}%'",
         "event_lat BETWEEN {0}-0.075 AND {0}+0.075 AND event_lon BETWEEN {1}-0.075 AND {1}+0.075",
         "event_tags LIKE '%{}%'", "time(event_datetime) = '{}'"]
 

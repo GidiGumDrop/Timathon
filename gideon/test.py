@@ -1,7 +1,7 @@
 import requests
 
 #res = requests.post('http://127.0.0.1:5000/api/insert_new_event/', json={'user_id':5, 'title':'test', 'desc':'test', 'datetime':'test', 'tags':'test,test2', 'lat':45, 'lon':45, 'agegroup':'0-80', 'max_ppl':5, 'imgs':'test.png'})
-res = requests.post('http://127.0.0.1:5000/api/search_events/', json={"location":['45','45']})
+res = requests.post('http://127.0.0.1:5000/api/search_events/', json={"keywords":"hiking"})
 print(res.text)
 
 #update user info
